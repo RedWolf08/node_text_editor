@@ -1,5 +1,6 @@
 // src/App.js
 import React, { useCallback, useState, useMemo, useEffect } from 'react';
+import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import ReactFlow, {
   Background,
   useNodesState,
@@ -363,7 +364,60 @@ useEffect(() => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [nodes, edges, selectedNodeId, selectedEdgeId, copiedSelection, nextId, setNodes, setEdges, deleteNode]);
 
-  const addNode = () => {
+
+  const generateShareLink = useCallback(() => {
+    const state = {
+      nodes: nodes.map(({ id, position, data }) => ({
+        id,
+        position,
+        data: {
+          title: data.title,
+          content: data.content,
+          activeBranch: data.activeBranch
+        }
+      })),
+      edges,
+      nextId
+    };
+    
+    const compressed = compressToEncodedURIComponent(JSON.stringify(state));
+    return `${window.location.origin}${window.location.pathname}?state=${compressed}`;
+  }, [nodes, edges, nextId]);
+
+  useEffect(() => {
+    const loadState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const compressedState = params.get('state');
+      
+      if (compressedState) {
+        try {
+          const stateStr = decompressFromEncodedURIComponent(compressedState);
+          const state = JSON.parse(stateStr);
+          
+          const restoredNodes = state.nodes.map(node => ({
+            ...node,
+            data: {
+              ...node.data,
+              branches: [],
+              onNodeClick: () => {},
+              onBranchChange: () => {}
+            }
+          }));
+          
+          setNodes(restoredNodes);
+          setEdges(state.edges);
+          setNextId(state.nextId);
+        } catch (e) {
+          console.error('Failed to load state:', e);
+        }
+      }
+    };
+    
+    loadState();
+  }, [setEdges, setNodes]);
+
+
+  const addNode = useCallback(() => {
     const newNode = {
       id: nextId.toString(),
       type: 'custom',
@@ -379,7 +433,7 @@ useEffect(() => {
     };
     setNodes((nds) => [...nds, newNode]);
     setNextId((id) => id + 1);
-  };
+  });
 
   const updateNodeLabel = (id, newTitle, newContent) => {
     setNodes((nds) =>
@@ -628,25 +682,45 @@ useEffect(() => {
       }}>
         {getFullChain()}
       </div>
-      <button 
-        onClick={addNode} 
-        style={{ 
-          marginTop: 10,
-          background: '#2a2a2d',
-          border: '1px solid #292929',
-          color: '#bfbfbf',
-          padding: '8px 15px',
-          borderRadius: 4,
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          ':hover': {
-            borderColor: '#da6623',
-            color: '#da6623'
-          }
-        }}
-      >
-        Добавить ноду
-      </button>
+
+    <h3 style={{ color: '#da6623', marginBottom: 15 }}>Поделиться</h3>
+    <button 
+      onClick={() => {
+        const link = generateShareLink();
+        navigator.clipboard.writeText(link);
+      }}
+      style={{ 
+        background: '#2a2a2d',
+        border: '1px solid #292929',
+        color: '#bfbfbf',
+        padding: '6px 15px',
+        cursor: 'pointer',
+        marginRight: '1%',
+        //marginBottom: 10,
+        width: '49%'
+      }}
+    >
+      Скопировать ссылку
+    </button>
+    
+    <button 
+      onClick={() => {
+        window.history.replaceState(null, '', window.location.pathname);
+        setNodes(initialNodes);
+        setEdges(initialEdges);
+        setNextId(2);
+      }}
+      style={{ 
+        background: '#2a2a2d',
+        border: '1px solid #292929',
+        color: '#bfbfbf',
+        padding: '6px 15px',
+        cursor: 'pointer',
+        width: '49%'
+      }}
+    >
+      Создать новый
+    </button>
 
     </div>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
@@ -660,14 +734,19 @@ useEffect(() => {
             onEdgeClick={(event, edge) => {
               setSelectedEdgeId(edge.id);
               setEdgeContextMenu(prev => ({
-                visible: !prev.visible || prev.edgeId !== edge.id, // Закрываем если кликнули на ту же связь
+                visible: !prev.visible || prev.edgeId !== edge.id,
                 x: event.clientX,
                 y: event.clientY,
                 edgeId: edge.id,
               }));
             }}            
             
-            
+            onNodeDragStart={(event, node) => {
+              if(selectedNodeId !== node.id){
+                setSelectedNodeId(null);
+              }
+            }}
+
             onMoveStart={() => {
               setSelectedEdgeId(null);
               setEdgeContextMenu({ visible: false, x: 0, y: 0, edgeId: null });
@@ -715,7 +794,24 @@ useEffect(() => {
             />
             
             <Controls>
+              <button 
+                className="react-flow__controls-button" 
+                onClick={addNode}
+                title="Добавить ноду"
+                style={{
+                  width: '16px',
+                  height: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                </svg>
+              </button>
             </Controls>
+
               
           </ReactFlow>
         </div>
