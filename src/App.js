@@ -44,6 +44,36 @@ function CustomNode({ data, id }) {
 
       <div className="custom-node-header" style={{ paddingLeft: id !== "1" ? 18 : 8 }}>
         {data.title || `Нода ${id}`}
+
+        <div className="node-actions">
+          <button className="btn-icon edit"
+            onClick={(e) => {
+              e.stopPropagation();
+              data.onEditNode(id);
+            }}
+            
+          />
+
+          {id !== '1' && (
+            <>  
+              <button className="btn-icon clone"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if(id !== "1"){data.onCloneNode(id);}
+                }}
+
+              />
+              <button className="btn-icon delete"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if(id !== "1"){data.onDeleteNode(id);}
+                }}
+              />
+            </>
+          )}
+        </div>
+
+
       </div>
       
       <div className="custom-node-content">
@@ -90,6 +120,7 @@ function CustomNode({ data, id }) {
         type="source" 
         position={Position.Right} 
         className="handle handle-source"
+        isConnectable={true}
         onDoubleClick={(e) => {
           e.stopPropagation();
           data.onHandleDoubleClick(id);
@@ -188,8 +219,17 @@ function App() {
   const [editingContent, setEditingContent] = useState('');
   const [editingNodeId, setEditingNodeId] = useState(null);
   
+  
   const activePathEdges = useMemo(() => getActivePathEdges(nodes, edges), [nodes, edges]);
   const activePathNodes = useMemo(() => getActivePathNodes(nodes), [nodes]);
+
+  const [edgeContextMenu, setEdgeContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    edgeId: null,
+  });
+  
 
   const edgesWithStyles = useMemo(() => 
     edges.map(edge => ({
@@ -230,6 +270,7 @@ function App() {
     if (selectedEdgeId === edgeId) setSelectedEdgeId(null);
   }, [selectedEdgeId, setEdges]);
 
+  const handleDeleteNode = useCallback((nodeId) => { deleteNode(nodeId); }, [deleteNode]);  
 
 // recompute branches once per edge‐change, not on every nodes update
 useEffect(() => {
@@ -382,6 +423,7 @@ useEffect(() => {
     const node = nodes.find(n => n.id === id);
     if (node) {
       setEditingNodeId(id);
+      setEdgeContextMenu({ visible: false, x: 0, y: 0, edgeId: null });
       setEditingTitle(node.data.title);
       setEditingContent(node.data.content);
     }
@@ -411,6 +453,7 @@ useEffect(() => {
         onHandleDoubleClick: handleHandleDoubleClick,
       },
     };
+    
   
     const newEdge = {
       id: `e${sourceId}-${newNodeId}`,
@@ -425,23 +468,60 @@ useEffect(() => {
     setNextId(prev => prev + 1);
   }, [nodes, nextId, setNodes, setEdges, handleNodeClick, handleBranchChange]);
 
+  const handleCloneNode = useCallback((nodeId) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+  
+    const newId = nextId.toString();
+    const newNode = {
+      ...node,
+      id: newId,
+      position: { 
+        x: node.position.x + 50, 
+        y: node.position.y + 50 
+      },
+      data: {
+        ...node.data,
+        branches: [],
+        activeBranch: null,
+        selected: false
+      }
+    };
+  
+    setNodes(nds => [...nds, newNode]);
+    setNextId(prev => prev + 1);
+  }, [nodes, nextId, setNodes]);
+  
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       const editingPanel = document.querySelector('.editing-panel');
       const leftPanel = document.querySelector('.left-panel');
       const reactFlowControls = document.querySelector('.react-flow__controls');
       
+      const edgeMenu = document.querySelector('.edge-context-menu');
+      
       const isClickOnProtectedElement = 
-        e.target.closest('.react-flow__node') ||
-        editingPanel?.contains(e.target) ||
-        leftPanel?.contains(e.target) ||
-        reactFlowControls?.contains(e.target) ||
-        e.target.closest('select');
+      e.target.closest('.react-flow__node') ||
+      e.target.closest('.react-flow__edge') ||
+      editingPanel?.contains(e.target) ||
+      leftPanel?.contains(e.target) ||
+      reactFlowControls?.contains(e.target) ||
+      e.target.closest('select') ||
+      edgeMenu?.contains(e.target);
 
+      if (edgeContextMenu.visible && !isClickOnProtectedElement) {
+        setEdgeContextMenu({ visible: false, x: 0, y: 0, edgeId: null });
+      }
+
+        
       if (editingNodeId && !isClickOnProtectedElement) {
         setEditingNodeId(null);
+        
       }
+      
     };
+    
   
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
@@ -494,9 +574,12 @@ useEffect(() => {
         onNodeDoubleClick: (id) => handleNodeDoubleClick(id),
         onBranchChange: (branchId) => handleBranchChange(node.id, branchId),
         onHandleDoubleClick: handleHandleDoubleClick,
+        onDeleteNode: handleDeleteNode,
+        onCloneNode: handleCloneNode,
+        onEditNode: handleNodeDoubleClick  
         }
     }))
-  , [nodes, activePathNodes, selectedNodeId, handleHandleDoubleClick, handleNodeCopy, handleNodeClick, handleNodeDoubleClick, handleBranchChange]);
+  , [nodes, activePathNodes, selectedNodeId, handleHandleDoubleClick, handleDeleteNode, handleCloneNode, handleNodeDoubleClick, handleNodeCopy, handleNodeClick, handleBranchChange]);
 
   return (
     <Split
@@ -564,27 +647,7 @@ useEffect(() => {
       >
         Добавить ноду
       </button>
-      <button 
-        onClick={() => deleteEdge(selectedEdgeId)}
-        style={{ 
-          marginTop: 10,
-          marginLeft: 10,
-          background: '#2a2a2d',
-          border: '1px solid #292929',
-          color: '#bfbfbf',
-          padding: '8px 15px',
-          borderRadius: 4,
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          ':hover': {
-            borderColor: '#da6623',
-            color: '#da6623'
-          }
-        }}
-        disabled={!selectedEdgeId}
-      >
-        Удалить связь
-      </button>
+
     </div>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
         <div style={{ flex: 1 }}>
@@ -594,16 +657,27 @@ useEffect(() => {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
-            onEdgeClick={(_, edge) => {
+            onEdgeClick={(event, edge) => {
               setSelectedEdgeId(edge.id);
-              if (selectedEdgeId === edge.id) {
-                setSelectedEdgeId(null);
-              }
+              setEdgeContextMenu(prev => ({
+                visible: !prev.visible || prev.edgeId !== edge.id, // Закрываем если кликнули на ту же связь
+                x: event.clientX,
+                y: event.clientY,
+                edgeId: edge.id,
+              }));
+            }}            
+            
+            
+            onMoveStart={() => {
+              setSelectedEdgeId(null);
+              setEdgeContextMenu({ visible: false, x: 0, y: 0, edgeId: null });
             }}
 
             onPaneClick={() => {
               setSelectedEdgeId(null);
               setSelectedNodeId(null);
+              setEdgeContextMenu({ visible: false, x: 0, y: 0, edgeId: null });
+
             }}
 
             snapToGrid={true}
@@ -700,25 +774,49 @@ useEffect(() => {
             >
               Сохранить
             </button>
-            <button
-              onClick={() => { if(editingNodeId !== '1'){deleteNode(editingNodeId )} }}
-              style={{ 
-                marginLeft: 10,
-                background: '#ee6a6a',
-                color: '#0000000',
-                border: '1px solid #ee6a6a',
-                padding: '6px 12px',
-                borderRadius: 4,
-                cursor: 'pointer'
-              }}
-        
-            >
-              Удалить ноду
-            </button>
           </div>
         )}
         
       </div>
+
+      {edgeContextMenu.visible && (
+      <div
+        className="edge-context-menu"
+        style={{
+          position: 'fixed',
+          left: edgeContextMenu.x,
+          top: edgeContextMenu.y,
+          background: '#2a2a2d',
+          border: '1px solid #292929',
+          borderRadius: 4,
+          zIndex: 1000,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+        }}
+      >
+        <button
+          onClick={() => {
+            deleteEdge(edgeContextMenu.edgeId);
+            setEdgeContextMenu({ visible: false, x: 0, y: 0, edgeId: null });
+          }}
+          style={{
+            width: '100%',
+            padding: '8px 16px',
+            background: 'none',
+            border: 'none',
+            color: '#bfbfbf',
+            cursor: 'pointer',
+            textAlign: 'left',
+            ':hover': {
+              background: '#da6623',
+              color: '#fff',
+            },
+          }}
+        >
+          Удалить связь
+        </button>
+      </div>
+    )}
+
     </Split>
   );
 }

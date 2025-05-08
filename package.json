@@ -1,7 +1,7 @@
 {
   "name": "rabbit-holes-clone",
   "version": "0.1.0",
-  "homepage": "https://redwolf08.github.io/node_text_editor",
+  "homepage": "https://redwolf08.github.io/node_text_editor/",
   "private": true,
   "main": "public/electron.js",
   "scripts": {
@@ -69,3 +69,4 @@
     ]
   }
 }
+
