@@ -113,7 +113,7 @@ function CustomNode({ data, id }) {
           <select
             className="branch-select"
             value={data.activeBranch || ''}
-            onChange={(e) => data.onBranchChange(e.target.value)}
+            onChange={(e) => data.onBranchChange(id, e.target.value)}
             onClick={(e) => e.stopPropagation()}
           >
             <option disabled value="">
@@ -246,6 +246,7 @@ function App() {
     edges.map(edge => ({
       ...edge,
       style: {
+        type: edge.type || 'bezier', // Дефолтный тип если не указан
         stroke: selectedEdgeId === edge.id ? '#595959' :  
         activePathEdges.has(edge.id) ? '#da6623' : '#353535',
         strokeWidth: 1.5,
@@ -266,8 +267,15 @@ function App() {
       return;
     }
     setNodes(nds => nds.map(node => 
-      node.id === nodeId ? { ...node, data: { ...node.data, activeBranch: branchId } } : node
+      node.id === nodeId ? { 
+        ...node, 
+        data: { 
+          ...node.data, 
+          activeBranch: branchId 
+        } 
+      } : node
     ));
+  
   }, [edges]); // Зависим только от edges
 
   const handleNodeClick = useCallback((id) => {
@@ -304,7 +312,7 @@ function App() {
       id: `e${sourceId}-${newNodeId}`,
       source: sourceId,
       target: newNodeId,
-      type: 'default',
+      type: 'bezier', // Добавляем явное указание типа
       timestamp: Date.now(),
     };
   
@@ -516,7 +524,7 @@ useEffect(() => {
               ...node.data,
               branches: [],
               onNodeClick: handleNodeClick,
-              onBranchChange: handleBranchChange,
+              onBranchChange: (branchId) => handleBranchChange(node.id, branchId), // Фиксируем node.id
               onHandleDoubleClick: handleHandleDoubleClick,
               onDeleteNode: handleDeleteNode,
               onCloneNode: handleCloneNode,
@@ -741,7 +749,7 @@ useEffect(() => {
         width: '49%'
       }}
     >
-      Создать новый
+      Очистить Холст
     </button>
 
     </div>
@@ -793,7 +801,7 @@ useEffect(() => {
             preventScrolling={false}
                     
             defaultEdgeOptions={{
-              type: 'straight',
+              type: 'bezier',
               style: {
                 stroke: '#686868',
                 strokeWidth: 1.5,
