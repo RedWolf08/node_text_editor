@@ -260,6 +260,102 @@ function App() {
     [edges, selectedEdgeId, activePathEdges]
   );
 
+  const handleBranchChange = useCallback((nodeId, branchId) => {
+    if (hasPath(nodes, edges, branchId, nodeId)) {
+      console.warn(`Переключение ветки ${nodeId} → ${branchId} образует цикл, отменяю.`);
+      return;
+    }
+    setNodes(nds => nds.map(node => 
+      node.id === nodeId ? { ...node, data: { ...node.data, activeBranch: branchId } } : node
+    ));
+  }, [edges, nodes, setNodes]);
+
+  const handleNodeClick = useCallback((id) => {
+    setSelectedNodeId(id);
+  }, []);
+
+  const handleHandleDoubleClick = useCallback((sourceId) => {
+    const sourceNode = nodes.find(n => n.id === sourceId);
+    if (!sourceNode) return;
+  
+    const newNodeId = nextId.toString();
+    const newPosition = {
+      x: sourceNode.position.x + 200,
+      y: sourceNode.position.y
+    };
+  
+    const newNode = {
+      id: newNodeId,
+      type: 'custom',
+      position: newPosition,
+      data: { 
+        title: `Нода ${newNodeId}`,
+        content: `Содержание ноды ${newNodeId}`,
+        branches: [],
+        activeBranch: null,
+        onNodeClick: handleNodeClick,
+        onBranchChange: (branchId) => handleBranchChange(newNodeId, branchId),
+        onHandleDoubleClick: handleHandleDoubleClick,
+      },
+    };
+    
+  
+    const newEdge = {
+      id: `e${sourceId}-${newNodeId}`,
+      source: sourceId,
+      target: newNodeId,
+      type: 'default',
+      timestamp: Date.now(),
+    };
+  
+    setNodes(nds => [...nds, newNode]);
+    setEdges(eds => [...eds, newEdge]);
+    setNextId(prev => prev + 1);
+  }, [nodes, nextId, setNodes, setEdges, handleNodeClick, handleBranchChange]);
+
+
+  const handleCloneNode = useCallback((nodeId) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+  
+    const newId = nextId.toString();
+    const newNode = {
+      ...node,
+      id: newId,
+      position: { 
+        x: node.position.x + 50, 
+        y: node.position.y + 50 
+      },
+      data: {
+        ...node.data,
+        branches: [],
+        activeBranch: null,
+        selected: false
+      }
+    };
+  
+    setNodes(nds => [...nds, newNode]);
+    setNextId(prev => prev + 1);
+  }, [nodes, nextId, setNodes]);
+  
+  const handleNodeCopy = useCallback((nodeId) => {
+    setSelectedNodeId(nodeId);
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) setCopiedSelection({ nodes: [node], edges: [] });
+  }, [nodes]);
+
+
+  
+  const handleNodeDoubleClick = useCallback((id) => {
+    const node = nodes.find(n => n.id === id);
+    if (node) {
+      setEditingNodeId(id);
+      setEdgeContextMenu({ visible: false, x: 0, y: 0, edgeId: null });
+      setEditingTitle(node.data.title);
+      setEditingContent(node.data.content);
+    }
+  }, [nodes]);
+
   const deleteNode = useCallback((nodeId) => {
     setNodes((nds) =>
       nds
@@ -406,16 +502,17 @@ useEffect(() => {
       
       if (compressedState) {
         try {
+          // Правильное декодирование и парсинг
           const stateStr = decompressFromEncodedURIComponent(compressedState);
-          const state = JSON.parse(stateStr);
-          
-          const restoredNodes = state.nodes.map(node => ({
+          const parsedState = JSON.parse(stateStr);
+  
+          // Восстановление нод с обработчиками
+          const restoredNodes = parsedState.nodes.map(node => ({
             ...node,
             type: 'custom',
             data: {
               ...node.data,
               branches: [],
-              activeBranch: node.data.activeBranch,
               onNodeClick: handleNodeClick,
               onBranchChange: (branchId) => handleBranchChange(node.id, branchId),
               onHandleDoubleClick: handleHandleDoubleClick,
@@ -424,19 +521,20 @@ useEffect(() => {
               onEditNode: handleNodeDoubleClick
             }
           }));
-          
+  
+          // Обновление состояния приложения
           setNodes(restoredNodes);
-          setEdges(state.edges);
-          setNextId(state.nextId);
+          setEdges(parsedState.edges);
+          setNextId(parsedState.nextId);
         } catch (e) {
-          console.error('Failed to load state:', e);
+          console.error('Ошибка загрузки сохранённого состояния:', e);
         }
       }
     };
     
     loadState();
-  }, [setEdges, setNodes, handleBranchChange, handleDeleteNode, handleCloneNode, handleNodeClick, handleHandleDoubleClick, handleNodeDoubleClick]);
-    
+  }, [setEdges, setNodes, handleBranchChange, handleNodeClick, handleHandleDoubleClick, handleDeleteNode, handleCloneNode, handleNodeDoubleClick]);
+      
 
   const addNode = useCallback(() => {
     const newNode = {
@@ -467,106 +565,7 @@ useEffect(() => {
     );
   };
   
-  const handleNodeCopy = useCallback((nodeId) => {
-    setSelectedNodeId(nodeId);
-    const node = nodes.find(n => n.id === nodeId);
-    if (node) setCopiedSelection({ nodes: [node], edges: [] });
-  }, [nodes]);
 
-  const handleBranchChange = useCallback((nodeId, branchId) => {
-
-    if (hasPath(nodes, edges, branchId, nodeId)) {
-      console.warn(`Переключение ветки ${nodeId} → ${branchId} образует цикл, отменяю.`);
-      return;
-    }
-  
-    setNodes((nds) =>
-      nds.map((node) =>
-        node.id === nodeId ? { 
-          ...node, 
-          data: { ...node.data, activeBranch: branchId } 
-        } : node
-      )
-    );
-  }, [edges, nodes, setNodes]);
-
-  const handleNodeClick = useCallback((id) => {
-    setSelectedNodeId(id);
-  }, []);
-  
-  const handleNodeDoubleClick = useCallback((id) => {
-    const node = nodes.find(n => n.id === id);
-    if (node) {
-      setEditingNodeId(id);
-      setEdgeContextMenu({ visible: false, x: 0, y: 0, edgeId: null });
-      setEditingTitle(node.data.title);
-      setEditingContent(node.data.content);
-    }
-  }, [nodes]);
-  
-  const handleHandleDoubleClick = useCallback((sourceId) => {
-    const sourceNode = nodes.find(n => n.id === sourceId);
-    if (!sourceNode) return;
-  
-    const newNodeId = nextId.toString();
-    const newPosition = {
-      x: sourceNode.position.x + 200,
-      y: sourceNode.position.y
-    };
-  
-    const newNode = {
-      id: newNodeId,
-      type: 'custom',
-      position: newPosition,
-      data: { 
-        title: `Нода ${newNodeId}`,
-        content: `Содержание ноды ${newNodeId}`,
-        branches: [],
-        activeBranch: null,
-        onNodeClick: handleNodeClick,
-        onBranchChange: (branchId) => handleBranchChange(newNodeId, branchId),
-        onHandleDoubleClick: handleHandleDoubleClick,
-      },
-    };
-    
-  
-    const newEdge = {
-      id: `e${sourceId}-${newNodeId}`,
-      source: sourceId,
-      target: newNodeId,
-      type: 'default',
-      timestamp: Date.now(),
-    };
-  
-    setNodes(nds => [...nds, newNode]);
-    setEdges(eds => [...eds, newEdge]);
-    setNextId(prev => prev + 1);
-  }, [nodes, nextId, setNodes, setEdges, handleNodeClick, handleBranchChange]);
-
-  const handleCloneNode = useCallback((nodeId) => {
-    const node = nodes.find(n => n.id === nodeId);
-    if (!node) return;
-  
-    const newId = nextId.toString();
-    const newNode = {
-      ...node,
-      id: newId,
-      position: { 
-        x: node.position.x + 50, 
-        y: node.position.y + 50 
-      },
-      data: {
-        ...node.data,
-        branches: [],
-        activeBranch: null,
-        selected: false
-      }
-    };
-  
-    setNodes(nds => [...nds, newNode]);
-    setNextId(prev => prev + 1);
-  }, [nodes, nextId, setNodes]);
-  
 
   useEffect(() => {
     const handleClickOutside = (e) => {
