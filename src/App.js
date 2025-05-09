@@ -17,14 +17,23 @@ import Split from 'react-split';
 function CustomNode({ data, id }) {
   const isActiveNode = data.activePathNodes.has(id);
 
+  const style = data.style || {
+    borderColor: data.selected ? '#59e7a8' : data.activePathNodes.has(id) ? '#da6623' : '#292929',
+    background: data.activePathNodes.has(id) ? '#1b1b1d' : "#161617",
+    boxShadow: `0 0 ${data.selected ? '4px #59e7a8' : data.activePathNodes.has(id) ? '4px #da6623' : '9px #494949'}`
+  };
+
+
   return (
     <div
       className="custom-node"
-      style={{
+      /*style={{
         borderColor: data.selected ? '#59e7a8' : isActiveNode ? '#da6623' : '#292929',
         background: isActiveNode ? '#1b1b1d' : "#161617",
         boxShadow: `0 0 ${data.selected ? '4px #59e7a8' : isActiveNode ? '4px #da6623' : '9px #494949'}`
-      }}
+      }}*/
+
+      style={style}
       onDoubleClick={() => data.onNodeDoubleClick(id)}
       onClick={(e) => {
         e.stopPropagation();
@@ -367,23 +376,31 @@ useEffect(() => {
 
   const generateShareLink = useCallback(() => {
     const state = {
-      nodes: nodes.map(({ id, position, data }) => ({
+      nodes: nodes.map(({ id, position, data, type }) => ({
         id,
         position,
+        type,
         data: {
           title: data.title,
           content: data.content,
-          activeBranch: data.activeBranch
+          activeBranch: data.activeBranch,
+          // Сохраняем дополнительные стилевые параметры
+          style: {
+            borderColor: data.selected ? '#59e7a8' : data.activePathNodes?.has(id) ? '#da6623' : '#292929',
+            background: data.activePathNodes?.has(id) ? '#1b1b1d' : "#161617",
+            boxShadow: `0 0 ${data.selected ? '4px #59e7a8' : data.activePathNodes?.has(id) ? '4px #da6623' : '9px #494949'}`
+          }
         }
       })),
       edges,
-      nextId
+      nextId,
+      activePathNodes: Array.from(activePathNodes) // Сохраняем активный путь
     };
     
     const compressed = compressToEncodedURIComponent(JSON.stringify(state));
     return `${window.location.origin}${window.location.pathname}?state=${compressed}`;
-  }, [nodes, edges, nextId]);
-
+  }, [nodes, edges, nextId, activePathNodes]);
+  
   useEffect(() => {
     const loadState = () => {
       const params = new URLSearchParams(window.location.search);
@@ -398,15 +415,26 @@ useEffect(() => {
             ...node,
             data: {
               ...node.data,
-              branches: [],
-              onNodeClick: () => {},
-              onBranchChange: () => {}
+              // Восстанавливаем обработчики и стили
+              onNodeClick: handleNodeClick,
+              onBranchChange: (branchId) => handleBranchChange(node.id, branchId),
+              onHandleDoubleClick: handleHandleDoubleClick,
+              onDeleteNode: handleDeleteNode,
+              onCloneNode: handleCloneNode,
+              onEditNode: handleNodeDoubleClick,
+              // Восстанавливаем стилевые параметры
+              style: node.data.style || {},
+              activePathNodes: new Set(state.activePathNodes || [])
             }
           }));
           
           setNodes(restoredNodes);
           setEdges(state.edges);
           setNextId(state.nextId);
+          // Восстанавливаем активный путь
+          if (state.activePathNodes) {
+            activePathNodes.current = new Set(state.activePathNodes);
+          }
         } catch (e) {
           console.error('Failed to load state:', e);
         }
@@ -415,7 +443,7 @@ useEffect(() => {
     
     loadState();
   }, [setEdges, setNodes]);
-
+  
 
   const addNode = useCallback(() => {
     const newNode = {
