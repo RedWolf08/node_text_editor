@@ -268,7 +268,7 @@ function App() {
     setNodes(nds => nds.map(node => 
       node.id === nodeId ? { ...node, data: { ...node.data, activeBranch: branchId } } : node
     ));
-  }, [edges, nodes, setNodes]);
+  }, [edges]); // Зависим только от edges
 
   const handleNodeClick = useCallback((id) => {
     setSelectedNodeId(id);
@@ -311,7 +311,7 @@ function App() {
     setNodes(nds => [...nds, newNode]);
     setEdges(eds => [...eds, newEdge]);
     setNextId(prev => prev + 1);
-  }, [nodes, nextId, setNodes, setEdges, handleNodeClick, handleBranchChange]);
+  }, [nodes, nextId, setNodes, setEdges]); // Все используемые значения в зависимостях
 
 
   const handleCloneNode = useCallback((nodeId) => {
@@ -497,6 +497,8 @@ useEffect(() => {
   
   useEffect(() => {
     const loadState = () => {
+      if (nodes.length > 1) return; // Если уже есть ноды - не загружаем
+
       const params = new URLSearchParams(window.location.search);
       const compressedState = params.get('state');
       
@@ -514,7 +516,7 @@ useEffect(() => {
               ...node.data,
               branches: [],
               onNodeClick: handleNodeClick,
-              onBranchChange: (branchId) => handleBranchChange(node.id, branchId),
+              onBranchChange: handleBranchChange,
               onHandleDoubleClick: handleHandleDoubleClick,
               onDeleteNode: handleDeleteNode,
               onCloneNode: handleCloneNode,
@@ -533,7 +535,7 @@ useEffect(() => {
     };
     
     loadState();
-  }, [setEdges, setNodes, handleBranchChange, handleNodeClick, handleHandleDoubleClick, handleDeleteNode, handleCloneNode, handleNodeDoubleClick]);
+  }, [setEdges, setNodes, nodes.length]); // Добавляем nodes.length в зависимости
       
 
   const addNode = useCallback(() => {
@@ -643,15 +645,15 @@ useEffect(() => {
         ...node.data,
         activePathNodes,
         selected: node.id === selectedNodeId,
-        onNodeCopy: id => handleNodeCopy(id),
-        onNodeClick: (id) => handleNodeClick(id),
-        onNodeDoubleClick: (id) => handleNodeDoubleClick(id),
-        onBranchChange: (branchId) => handleBranchChange(node.id, branchId),
+        onNodeCopy: handleNodeCopy,
+        onNodeClick: handleNodeClick,
+        onNodeDoubleClick: handleNodeDoubleClick,
+        onBranchChange: handleBranchChange,
         onHandleDoubleClick: handleHandleDoubleClick,
         onDeleteNode: handleDeleteNode,
         onCloneNode: handleCloneNode,
         onEditNode: handleNodeDoubleClick  
-        }
+      }    
     }))
   , [nodes, activePathNodes, selectedNodeId, handleHandleDoubleClick, handleDeleteNode, handleCloneNode, handleNodeDoubleClick, handleNodeCopy, handleNodeClick, handleBranchChange]);
 
