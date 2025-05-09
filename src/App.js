@@ -246,7 +246,7 @@ function App() {
     edges.map(edge => ({
       ...edge,
       style: {
-        type: edge.type || 'bezier', // Дефолтный тип если не указан
+        type: edge.type || 'bezier', 
         stroke: selectedEdgeId === edge.id ? '#595959' :  
         activePathEdges.has(edge.id) ? '#da6623' : '#353535',
         strokeWidth: 1.5,
@@ -276,7 +276,7 @@ function App() {
       } : node
     ));
   
-  }, [edges]); // Зависим только от edges
+  }, [edges]); 
 
   const handleNodeClick = useCallback((id) => {
     setSelectedNodeId(id);
@@ -312,14 +312,14 @@ function App() {
       id: `e${sourceId}-${newNodeId}`,
       source: sourceId,
       target: newNodeId,
-      type: 'bezier', // Добавляем явное указание типа
+      type: 'bezier',
       timestamp: Date.now(),
     };
   
     setNodes(nds => [...nds, newNode]);
     setEdges(eds => [...eds, newEdge]);
     setNextId(prev => prev + 1);
-  }, [nodes, nextId, setNodes, setEdges]); // Все используемые значения в зависимостях
+  }, [nodes, nextId, setNodes, setEdges]); 
 
 
   const handleCloneNode = useCallback((nodeId) => {
@@ -387,7 +387,6 @@ function App() {
 
   const handleDeleteNode = useCallback((nodeId) => { deleteNode(nodeId); }, [deleteNode]);  
 
-// recompute branches once per edge‐change, not on every nodes update
 useEffect(() => {
     setNodes(nds =>
       nds.map(node => {
@@ -406,7 +405,6 @@ useEffect(() => {
           data: {
             ...node.data,
             branches,
-            // if no activeBranch yet, pick the first
             activeBranch: node.data.activeBranch || branches[0]?.target || null
           }
         };
@@ -505,18 +503,16 @@ useEffect(() => {
   
   useEffect(() => {
     const loadState = () => {
-      if (nodes.length > 1) return; // Если уже есть ноды - не загружаем
+      if (nodes.length > 1) return;
 
       const params = new URLSearchParams(window.location.search);
       const compressedState = params.get('state');
       
       if (compressedState) {
         try {
-          // Правильное декодирование и парсинг
           const stateStr = decompressFromEncodedURIComponent(compressedState);
           const parsedState = JSON.parse(stateStr);
   
-          // Восстановление нод с обработчиками
           const restoredNodes = parsedState.nodes.map(node => ({
             ...node,
             type: 'custom',
@@ -532,7 +528,6 @@ useEffect(() => {
             }
           }));
   
-          // Обновление состояния приложения
           setNodes(restoredNodes);
           setEdges(parsedState.edges);
           setNextId(parsedState.nextId);
@@ -543,7 +538,7 @@ useEffect(() => {
     };
     
     loadState();
-  }, [setEdges, setNodes, nodes.length]); // Добавляем nodes.length в зависимости
+  }, [setEdges, setNodes, nodes.length]); 
       
 
   const addNode = useCallback(() => {
@@ -614,9 +609,7 @@ useEffect(() => {
   const onConnect = useCallback((params) => {
     const { source, target } = params;
     
-    // если уже есть путь от target обратно к source — это цикл
     if (hasPath(nodes, edges, target, source)) {
-      // можно вывести алерт или просто ничего не делать
       console.warn(`Связь ${source} → ${target} образует цикл, отменяю.`);
       return;
     }
@@ -815,11 +808,11 @@ useEffect(() => {
             colorMode="dark"
                         
           >
-            <Background gap={20} size={1.25}     color="#404040"     // Цвет линий сетки (темно-серый)
-            variant="dots"      // Вариант: 'dots' для точек, 'lines' для линий
+            <Background gap={20} size={1.25}     color="#404040"     
+            variant="dots"     
             style={{ 
-              background: '#131313', // Основной фон
-              mixBlendMode: 'normal' // Режим наложения
+              background: '#131313', 
+              mixBlendMode: 'normal' 
             }}
             />
             
@@ -848,16 +841,16 @@ useEffect(() => {
         
         {editingNodeId  && (
             <div 
-            className="editing-panel" // ← Добавьте класс для идентификации
+            className="editing-panel" 
             style={{ 
               paddingLeft: 10,
               paddingTop: -10,
               paddingBottom: 10,
-              background: '#1b1b1d', // Измененный фон
+              background: '#1b1b1d', 
               borderTop: '3px solid #0c0c0c',
               boxShadow: '0 -10px 10px rgba(0,0,0,0.3)',
               zIndex: 10,
-              color: '#bfbfbf', // Цвет текста
+              color: '#bfbfbf', 
               position: 'absolute',
               bottom: 0,
               width: '99.1%'
