@@ -1,19 +1,20 @@
 {
   "files": {
-    "main.css": "/node_text_editor/static/css/main.3bf34b6f.css",
-    "main.js": "/node_text_editor/static/js/main.6711e432.js",
+    "main.css": "/node_text_editor/static/css/main.370d9a30.css",
+    "main.js": "/node_text_editor/static/js/main.f9e98251.js",
     "static/js/453.481c4a52.chunk.js": "/node_text_editor/static/js/453.481c4a52.chunk.js",
     "static/media/arrow-forward-circle.svg": "/node_text_editor/static/media/arrow-forward-circle.5fe16208da638bd280c7.svg",
     "index.html": "/node_text_editor/index.html",
     "static/media/trash-outline.svg": "/node_text_editor/static/media/trash-outline.83e6e062d02de7526268.svg",
     "static/media/create-outline.svg": "/node_text_editor/static/media/create-outline.e4ddc8b609be3a56ee59.svg",
     "static/media/copy-outline.svg": "/node_text_editor/static/media/copy-outline.fd05df59a71fe4b1df4a.svg",
-    "main.3bf34b6f.css.map": "/node_text_editor/static/css/main.3bf34b6f.css.map",
-    "main.6711e432.js.map": "/node_text_editor/static/js/main.6711e432.js.map",
+    "static/media/add-circle-outline (1).svg": "/node_text_editor/static/media/add-circle-outline (1).f0f4fd57d7001671ded7.svg",
+    "main.370d9a30.css.map": "/node_text_editor/static/css/main.370d9a30.css.map",
+    "main.f9e98251.js.map": "/node_text_editor/static/js/main.f9e98251.js.map",
     "453.481c4a52.chunk.js.map": "/node_text_editor/static/js/453.481c4a52.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.3bf34b6f.css",
-    "static/js/main.6711e432.js"
+    "static/css/main.370d9a30.css",
+    "static/js/main.f9e98251.js"
   ]
 }
