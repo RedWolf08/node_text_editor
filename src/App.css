@@ -28,9 +28,7 @@
 .App-link {
   color: #61dafb;
 }
-.react-flow__pane {
-  touch-action: none;
-}
+
 
 
 .gutter {
@@ -41,13 +39,13 @@
 }
 
 .gutter:hover {
-  background-color: #da6623 !important;
+  background-color: #d1462f !important;
 }
 
 /* Для hover-эффектов кнопок */
 button:hover {
-  border-color: #da6623 !important;
-  color: #da6623 !important;
+  border-color: #d1462f !important;
+  color: #d1462f !important;
 }
 
 
@@ -70,7 +68,7 @@ button:hover {
 
 .react-flow__controls-button:hover {
   background-color: #353535 !important;
-  color: #da6623 !important;
+  color: #d1462f !important;
 }
 
 .react-flow__controls-button svg {
@@ -89,7 +87,7 @@ button:hover {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #da6623;
+  background-color: #d1462f;
   
 }
 
@@ -129,7 +127,7 @@ button:hover {
   background: #161617;
   color: #bfbfbf;
   position: relative;
-  //cursor: pointer;
+  /* cursor: pointer; */
   min-width: 120px;
   max-width: 350px;
   min-height: 80px;
@@ -181,7 +179,6 @@ button:hover {
 
 /* Стили для редактора */
 .editing-panel {
-  padding: 10px;
   background: #1b1b1d;
   border-top: 3px solid #0c0c0c;
   box-shadow: 0 -10px 10px rgba(0,0,0,0.3);
@@ -189,16 +186,29 @@ button:hover {
   color: #bfbfbf;
   position: absolute;
   bottom: 0;
-  width: 100%;
+  left: 0;
+  right: 0;
+  max-height: 50vh;
+  overflow-y: auto;
 }
 
-.editing-input {
-  width: 140vh;
-  padding: 4px;
-  font-size: 12px;
-  background: #1b1b1d;
+.editing-panel input,
+.editing-panel textarea {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  background: #2a2a2d;
   color: #bfbfbf;
   border: 1px solid #292929;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.editing-panel input:focus,
+.editing-panel textarea:focus {
+  outline: none;
+  border-color: #d1462f;
+  box-shadow: 0 0 0 2px rgba(209, 70, 47, 0.2);
 }
 
 /* Стили для кнопок */
@@ -213,8 +223,65 @@ button:hover {
 }
 
 .btn-primary:hover {
-  border-color: #da6623;
-  color: #da6623;
+  border-color: #d1462f;
+  color: #d1462f;
+}
+
+/* Стили для кнопок форматирования текста */
+.formatting-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+  padding: 8px;
+  background: #2a2a2d;
+  border: 1px solid #292929;
+  border-radius: 4px;
+}
+
+.format-btn {
+  background: #1a1a1a;
+  border: 1px solid #353535;
+  color: #bfbfbf;
+  padding: 6px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 30px;
+  text-align: center;
+}
+
+.format-btn:hover {
+  background: #2a2a2d;
+  border-color: #d1462f;
+  color: #d1462f;
+}
+
+.format-btn.active {
+  background: #d1462f;
+  border-color: #b83d2a;
+  color: #ffffff;
+}
+
+.color-picker {
+  background: #1a1a1a;
+  border: 1px solid #353535;
+  border-radius: 3px;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  position: relative;
+}
+
+.color-picker input[type="color"] {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 3px;
 }
 
 .btn-danger {
@@ -227,7 +294,7 @@ button:hover {
 }
 
 .btn-orange {
-  background: #da6623;
+  background: #d1462f;
   color: #000;
   border: 1px solid #c45a1f;
   padding: 6px 12px;
@@ -243,9 +310,9 @@ button:hover {
   font-size: 11px;
   position: sticky;
   bottom: 0;
-  background: #2a2a2d;
-  border: 1px solid #3a3a3a;
-  border-radius: 4px;
+  background: #1a1a1a;
+  border: 1px solid #1f1f1f;
+  border-radius: 0;
   padding: 4px;
   color: #bfbfbf;
   cursor: pointer;
@@ -254,6 +321,25 @@ button:hover {
   background-repeat: no-repeat;
   background-position: right 8px center;
   padding-right: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, pointer-events 0.3s ease;
+}
+
+.branch-select.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.branch-select:hover {
+  background: #1f1f1f;
+  border-color: #2a2a2a;
+}
+
+.branch-select:focus {
+  outline: none;
+  border-color: #d1462f;
+  box-shadow: 0 0 0 2px rgba(209, 70, 47, 0.2);
 }
 
 /* Стили для цепочки */
@@ -272,16 +358,16 @@ button:hover {
 }
 
 .handle.handle-source:hover {
-  background: #da6623;
+  background: #d1462f;
   cursor: url("./icons/arrow-forward-circle.svg") 12 12, pointer;
-  //transform: scale(2.15);
+  /* transform: scale(2.15); */
   box-shadow: 0 0 5px rgba(218, 102, 35, 0.5);
 }
 
-.custom-node-header {
-  //position: relative; /* Добавляем для позиционирования кнопок */
-  //padding-right: 30px; /* Оставляем место для хендла */
-}
+/* .custom-node-header {
+  position: relative; 
+  padding-right: 30px; 
+} */
 
 .node-actions {
   position: absolute;
@@ -313,7 +399,7 @@ button:hover {
   content: url('./icons/trash-outline.svg');
   background-repeat: no-repeat;
   background-position: center;
-  //background-size: 14px 14px;
+  /* background-size: 14px 14px; */
   filter: invert(1);
 
 }
@@ -322,7 +408,7 @@ button:hover {
   content: url('./icons/copy-outline.svg');
   background-repeat: no-repeat;
   background-position: center;
-  //background-size: 14px 14px;
+  /* background-size: 14px 14px; */
   filter: invert(1);
 
 }
@@ -331,7 +417,170 @@ button:hover {
   content: url('./icons/create-outline.svg');
   background-repeat: no-repeat;
   background-position: center;
-  //background-size: 14px 14px;
+  /* background-size: 14px 14px; */
   filter: invert(1);
+}
 
+.btn-icon.add-point {
+  content: url('./icons/add-circle-outline (1).svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: invert(1);
+}
+
+/* Стили для точек соединения в стиле UE Blueprint */
+.connection-point {
+  padding: 0;
+  border: 2px solid #d1462f;
+  border-radius: 50%;
+  background: #161617;
+  position: relative;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.connection-point:hover {
+  border-color: #59e7a8;
+  background: #1a1a1a;
+  transform: scale(1.2);
+  box-shadow: 0 0 12px rgba(89, 231, 168, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.connection-point.selected {
+  border-color: #59e7a8;
+  background: #1a1a1a;
+  box-shadow: 0 0 8px rgba(89, 231, 168, 0.4);
+}
+
+.connection-point .handle {
+  width: 6px;
+  height: 6px;
+  background-color: transparent;
+  border: none;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.2s ease;
+}
+
+.connection-point:hover .handle {
+  background-color: transparent;
+  border: none;
+}
+
+.connection-point .handle-target {
+  left: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.connection-point .handle-source {
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Стили для выделения по Shift+LMouse */
+.react-flow__selection {
+  background: rgba(209, 70, 47, 0.1);
+  border: 2px solid #d1462e;
+  border-radius: 4px;
+}
+
+
+
+
+.react-flow__selection:focus {
+  outline: none;
+}
+
+/* Стили для зоны выделения уже выделенных нод */
+.react-flow__selection-box {
+  background: rgba(89, 231, 168, 0.1);
+  border: 2px solid #59e7a8;
+  border-radius: 4px;
+}
+
+
+/* Стили для выделения при перетаскивании выделенных нод */
+.react-flow__selection-box-dragging {
+  background: rgba(89, 231, 168, 0.2);
+  border: 2px solid #59e7a8;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(89, 231, 168, 0.3);
+}
+
+/* Стили для выделенных нод при множественном выборе */
+.react-flow__node.selected .custom-node {
+  border-color: #59e7a8 !important;
+  box-shadow: 0 0 8px rgba(89, 231, 168, 0.4) !important;
+}
+
+.react-flow__node.selected .connection-point {
+  border-color: #59e7a8 !important;
+  box-shadow: 0 0 8px rgba(89, 231, 168, 0.4) !important;
+}
+
+/* Стили для выделенных рёбер при множественном выборе */
+.react-flow__edge.selected {
+  stroke: #d1462f !important;
+  stroke-width: 2px !important;
+}
+
+/* Виньетка для фона */
+.react-flow {
+  position: relative;
+}
+
+.react-flow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at center, transparent 0%, transparent 50%, rgba(0, 0, 0, 0.3) 90%, rgba(0, 0, 0, 0.8) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Табличка ButterFly с акриловым эффектом */
+.butterfly-badge {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0;
+  padding: 20px 30px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Arial', sans-serif;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  transition: all 0.3s ease;
+  user-select: none;
+  min-width: 180px;
+  text-align: center;
+}
+
+.butterfly-badge:hover {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 
+    0 16px 60px rgba(0, 0, 0, 0.7);
 }
